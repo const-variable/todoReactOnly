@@ -13,6 +13,10 @@
 	margin: 3px 0;
 }
 
+.active-list {
+	font-weight: 800;
+}
+
 .btn-delete {
 	margin: 0 10px;
 	border-radius: 2px;

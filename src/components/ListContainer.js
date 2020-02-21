@@ -1,37 +1,50 @@
 import React, { Component } from "react";
-import TasksContainer from "./TasksContainer";
+import { connect } from "react-redux";
 
+import TasksContainer from "./TasksContainer";
 import "../App.css";
+
+import { addList, selectList } from "../actions/index";
+
 class ListContainer extends Component {
 	state = {
-		lists: [
-			{
-				id: 1,
-				name: "Office",
-				tasks: [
-					{ id: 1, name: "Complete TODO", completed: false },
-					{ id: 2, name: "Learn Redux store design", completed: false }
-				]
-			},
-			{
-				id: 2,
-				name: "Home",
-				tasks: [
-					{ id: 1, name: "Clean bathroom", completed: false },
-					{ id: 2, name: "Buy veggies and fruits", completed: false },
-					{ id: 3, name: "Do the laundry", completed: true }
-				]
-			}
-		],
 		selectedList: {},
+		// lists: [
+		// 	{
+		// 		id: 1,
+		// 		name: "Office",
+		// 		tasks: [
+		// 			{ id: 1, name: "Complete TODO", completed: false },
+		// 			{ id: 2, name: "Learn Redux store design", completed: false }
+		// 		]
+		// 	},
+		// 	{
+		// 		id: 2,
+		// 		name: "Home",
+		// 		tasks: [
+		// 			{ id: 1, name: "Clean bathroom", completed: false },
+		// 			{ id: 2, name: "Buy veggies and fruits", completed: false },
+		// 			{ id: 3, name: "Do the laundry", completed: true }
+		// 		]
+		// 	}
+		// ],
 		inputText: ""
 	};
 
-	handleSelectList = id => {
-		const selectedList = this.state.lists.find(list => list.id == id);
+	componentDidMount() {
 		this.setState({
-			selectedList
+			lists2: this.props.lists,
+			selectedList: this.props.selectedList
 		});
+	}
+
+	handleSelectList = id => {
+		const selectedList = this.props.lists.find(list => list.id == id);
+		this.setState({
+			selectedList: id
+		});
+
+		this.props.selectList(id);
 	};
 
 	inputOnChange = e => {
@@ -40,30 +53,34 @@ class ListContainer extends Component {
 
 	onSubmit = e => {
 		e.preventDefault();
-
+		const id = new Date().getTime().toString();
 		let newListObj = {
-			id: new Date().getTime().toString(),
+			id: id,
 			name: this.state.inputText,
 			tasks: []
 		};
-		let newList = [...this.state.lists, newListObj];
-		console.log("new List: ", newList);
+
+		// let newList = [...this.state.lists, newListObj];
+		// console.log("new List: ", newList);
 		this.setState({
-			lists: newList,
-			inputText: "",
-			selectedList: newListObj
+			// lists: newList,
+			inputText: ""
+			// selectedList: newListObj
 		});
+
+		this.props.addList(newListObj);
+		this.props.selectList(id);
 	};
 
 	updateList = updatedTaskArray => {
 		let updatedSelectedList = {
-			id: this.state.selectedList.id,
-			name: this.state.selectedList.name,
+			id: this.props.selectedList.id,
+			name: this.props.selectedList.name,
 			tasks: [...updatedTaskArray]
 		};
 
-		let newList = this.state.lists.map(list => {
-			if (list.id !== this.state.selectedList.id) {
+		let newList = this.props.lists.map(list => {
+			if (list.id !== this.props.selectedList.id) {
 				return list;
 			} else {
 				return updatedSelectedList;
@@ -72,25 +89,17 @@ class ListContainer extends Component {
 		this.setState({ lists: newList, selectedList: updatedSelectedList });
 	};
 
-	// addTask = updatedTaskArray => {
-	// 	this.updateList(updatedTaskArray);
-	// };
-
-	// toggleCheck = updatedTaskArray => {
-	// 	this.updateList(updatedTaskArray);
-	// };
-
-	// deleteTodo = updatedTaskArray => {
-	// 	this.updateList(updatedTaskArray);
-	// };
-
 	renderList = () => {
-		if (this.state.lists.length === 0) {
+		if (this.props.lists.length === 0) {
 			return <div>Please add new list</div>;
 		}
-		return this.state.lists.map(list => {
+		return this.props.lists.map(list => {
 			return (
-				<li key={list.id} onClick={() => this.handleSelectList(list.id)}>
+				<li
+					key={list.id}
+					className={list.id == this.props.selectedListId ? "active-list" : ""}
+					onClick={() => this.handleSelectList(list.id)}
+				>
 					{list.name}
 				</li>
 			);
@@ -98,6 +107,10 @@ class ListContainer extends Component {
 	};
 
 	render() {
+		const list = this.props.lists.find(
+			list => list.id == this.props.selectedListId
+		);
+
 		return (
 			<div className="d-flex">
 				<div className="m-3 list-container">
@@ -114,12 +127,24 @@ class ListContainer extends Component {
 				</div>
 
 				<TasksContainer
-					list={this.state.selectedList}
-					updateList={this.updateList}
+					list={list}
+					// updateList={this.updateList}
 				/>
 			</div>
 		);
 	}
 }
 
-export default ListContainer;
+function mapStateToProps(state) {
+	console.log("Reducer state", state);
+
+	return {
+		selectedListId: state.listReducer.selectedListId,
+		lists: state.listReducer.lists
+	};
+}
+
+export default connect(mapStateToProps, {
+	addList,
+	selectList
+})(ListContainer);
